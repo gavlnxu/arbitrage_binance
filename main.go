@@ -54,7 +54,7 @@ func getBalance(symbol string) (qty float64) {
 	return count
 }
 
-// 买入还是卖出
+// 买入还是卖出，true-涨，false-跌
 func trend() (state bool) {
 	endTime := time.Now().UnixNano() / 1e6
 	startTime := time.Now().Add(-time.Minute*60).UnixNano() / 1e6
@@ -88,7 +88,6 @@ func trend() (state bool) {
 	} else {
 		return true
 	}
-
 }
 
 // 交易趋势 -1-跌，1-涨，0-平
