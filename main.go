@@ -12,6 +12,7 @@ import (
 var (
 	apiKey    = ""
 	secretKey = ""
+	pair      = "ETHBTC"
 )
 
 type Accuracy func() float64
@@ -59,7 +60,7 @@ func trend() (state bool) {
 	startTime := time.Now().Add(-time.Minute*60).UnixNano() / 1e6
 	fmt.Println(endTime, startTime)
 	trades, err := client.NewAggTradesService().
-		Symbol("ETHBTC").StartTime(startTime).
+		Symbol(pair).StartTime(startTime).
 		EndTime(endTime).Do(context.Background())
 	if err != nil {
 		fmt.Println(err)
@@ -95,7 +96,7 @@ func trendSmall() (state int) {
 	startTime := time.Now().Add(-time.Minute*10).UnixNano() / 1e6
 	fmt.Println(endTime, startTime)
 	trades, err := client.NewAggTradesService().
-		Symbol("ETHBTC").StartTime(startTime).
+		Symbol(pair).StartTime(startTime).
 		EndTime(endTime).Do(context.Background())
 	if err != nil {
 		fmt.Println(err)
@@ -108,12 +109,12 @@ func trendSmall() (state int) {
 	}
 	startAve := startTemp / 10
 
-	var end_temp float64 = 0
+	var endTemp float64 = 0
 	for _, t := range trades[len(trades)-10:] {
 		tPrice, _ := strconv.ParseFloat(t.Price, 64)
-		end_temp = tPrice + end_temp
+		endTemp = tPrice + endTemp
 	}
-	endAve := end_temp / 10
+	endAve := endTemp / 10
 	fmt.Println(startAve, endAve)
 
 	var a Accuracy = func() float64 { return 0.0000001 }
@@ -139,7 +140,7 @@ func Round2(f float64, n int) float64 {
 }
 
 func limitOrder(sellPer float64, buyPer float64) {
-	res, err := client.NewDepthService().Symbol("ETHBTC").
+	res, err := client.NewDepthService().Symbol(pair).
 		Do(context.Background())
 
 	if err != nil {
@@ -187,13 +188,13 @@ func limitOrder(sellPer float64, buyPer float64) {
 		//max_price , min_price := Max_min_arry(prices)
 		//var a Accuracy = func() float64 { return 0.0000001 }
 		//if (a.Greater(max_price*1.008,f_sell_price)) && (a.Smaller(min_price*0.992,f_buy_price)){
-		_, err1 := client.NewCreateOrderService().Symbol("ETHBTC").Side(binance.SideTypeSell).Type(binance.OrderTypeLimit).TimeInForce(binance.TimeInForceGTC).Quantity(sTradeSize).Price(sSellPrice).Do(context.Background())
+		_, err1 := client.NewCreateOrderService().Symbol(pair).Side(binance.SideTypeSell).Type(binance.OrderTypeLimit).TimeInForce(binance.TimeInForceGTC).Quantity(sTradeSize).Price(sSellPrice).Do(context.Background())
 		if err1 != nil {
 			fmt.Println(err1)
 			return
 		}
 
-		_, err2 := client.NewCreateOrderService().Symbol("ETHBTC").Side(binance.SideTypeBuy).Type(binance.OrderTypeLimit).TimeInForce(binance.TimeInForceGTC).Quantity(sTradeSize).Price(sBuyPrice).Do(context.Background())
+		_, err2 := client.NewCreateOrderService().Symbol(pair).Side(binance.SideTypeBuy).Type(binance.OrderTypeLimit).TimeInForce(binance.TimeInForceGTC).Quantity(sTradeSize).Price(sBuyPrice).Do(context.Background())
 		if err2 != nil {
 			fmt.Println(err2)
 			return
@@ -202,8 +203,9 @@ func limitOrder(sellPer float64, buyPer float64) {
 	}
 }
 
+// 是否存在交易对订单
 func orderState() (state bool) {
-	orders, err := client.NewListOpenOrdersService().Symbol("ETHBTC").
+	orders, err := client.NewListOpenOrdersService().Symbol(pair).
 		Do(context.Background())
 	if err != nil {
 		fmt.Println(err)
@@ -233,7 +235,7 @@ func main() {
 		counts++
 		time.Sleep(time.Minute * 1)
 		if counts > 5440 {
-			orders, _ := client.NewListOpenOrdersService().Symbol("ETHBTC").
+			orders, _ := client.NewListOpenOrdersService().Symbol(pair).
 				Do(context.Background())
 			for _, o := range orders {
 				orderId := o.OrderID
@@ -241,19 +243,19 @@ func main() {
 				tradeSize := o.OrigQuantity
 				if orderSide == "SELL" {
 					if trendSmall() == -1 {
-						_, err := client.NewCancelOrderService().Symbol("ETHBTC").
+						_, err := client.NewCancelOrderService().Symbol(pair).
 							OrderID(orderId).Do(context.Background())
 						if err == nil {
-							client.NewCreateOrderService().Symbol("ETHBTC").Side(binance.SideTypeSell).
+							client.NewCreateOrderService().Symbol(pair).Side(binance.SideTypeSell).
 								Type(binance.OrderTypeMarket).Quantity(tradeSize).Do(context.Background())
 						}
 					}
 				} else if tradeSize == "BUY" {
 					if trendSmall() == 1 {
-						_, err := client.NewCancelOrderService().Symbol("ETHBTC").
+						_, err := client.NewCancelOrderService().Symbol(pair).
 							OrderID(orderId).Do(context.Background())
 						if err == nil {
-							client.NewCreateOrderService().Symbol("ETHBTC").Side(binance.SideTypeBuy).
+							client.NewCreateOrderService().Symbol(pair).Side(binance.SideTypeBuy).
 								Type(binance.OrderTypeMarket).Quantity(tradeSize).Do(context.Background())
 						}
 					}
