@@ -52,9 +52,9 @@ func getBalance(symbol string) (qty float64) {
 		}
 	}
 	return count
-
 }
 
+// 买入还是卖出
 func trend() (state bool) {
 	endTime := time.Now().UnixNano() / 1e6
 	startTime := time.Now().Add(-time.Minute*60).UnixNano() / 1e6
@@ -91,6 +91,7 @@ func trend() (state bool) {
 
 }
 
+// 交易趋势 -1-跌，1-涨，0-平
 func trendSmall() (state int) {
 	endTime := time.Now().UnixNano() / 1e6
 	startTime := time.Now().Add(-time.Minute*10).UnixNano() / 1e6
@@ -102,14 +103,14 @@ func trendSmall() (state int) {
 		fmt.Println(err)
 		return
 	}
-	var startTemp float64 = 0
+	startTemp := 0.0
 	for _, t := range trades[:10] {
 		tPrice, _ := strconv.ParseFloat(t.Price, 64)
 		startTemp = tPrice + startTemp
 	}
 	startAve := startTemp / 10
 
-	var endTemp float64 = 0
+	endTemp := 0.0
 	for _, t := range trades[len(trades)-10:] {
 		tPrice, _ := strconv.ParseFloat(t.Price, 64)
 		endTemp = tPrice + endTemp
@@ -139,6 +140,7 @@ func Round2(f float64, n int) float64 {
 	return inst
 }
 
+// 下单
 func limitOrder(sellPer float64, buyPer float64) {
 	res, err := client.NewDepthService().Symbol(pair).
 		Do(context.Background())
@@ -167,27 +169,7 @@ func limitOrder(sellPer float64, buyPer float64) {
 	sTradeSize := strconv.FormatFloat(tradeSizeCount, 'g', -1, 64)
 	fmt.Println(sTradeSize)
 
-	//sell_trade_size := strconv.FormatFloat(Tradesize,'g',-1,64)
 	if ((fSellPrice - fBuyPrice) > 0) && (fBuyPrice < 0.00031) {
-
-		//endTime := time.Now().UnixNano()/1e6
-		//startTime := time.Now().Add(-time.Hour*1).UnixNano()/1e6
-		//trades, err := client.NewAggTradesService().
-		//	Symbol("ETHBTC").StartTime(startTime).
-		//	EndTime(endTime).Do(context.Background())
-		//if err != nil {
-		//	fmt.Println(err)
-		//	return
-		//}
-		//var prices []float64
-		//for _, t := range trades{
-		//	t_Price,_ := strconv.ParseFloat(t.Price,64)
-		//	prices = append(prices,t_Price)
-		//}
-
-		//max_price , min_price := Max_min_arry(prices)
-		//var a Accuracy = func() float64 { return 0.0000001 }
-		//if (a.Greater(max_price*1.008,f_sell_price)) && (a.Smaller(min_price*0.992,f_buy_price)){
 		_, err1 := client.NewCreateOrderService().Symbol(pair).Side(binance.SideTypeSell).Type(binance.OrderTypeLimit).TimeInForce(binance.TimeInForceGTC).Quantity(sTradeSize).Price(sSellPrice).Do(context.Background())
 		if err1 != nil {
 			fmt.Println(err1)
@@ -199,7 +181,6 @@ func limitOrder(sellPer float64, buyPer float64) {
 			fmt.Println(err2)
 			return
 		}
-		//}
 	}
 }
 
@@ -227,10 +208,9 @@ func main() {
 
 			if !trend() {
 				limitOrder(1.001, 0.995)
+				//} else {
+				//	limitOrder(1.010,1)
 			}
-			//} else {
-			//	limit_order(1.010,1)
-			//}
 		}
 		counts++
 		time.Sleep(time.Minute * 1)
